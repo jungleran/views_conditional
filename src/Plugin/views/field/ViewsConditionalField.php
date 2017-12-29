@@ -135,7 +135,7 @@ class ViewsConditionalField extends FieldPluginBase {
       if ($field == $this->options['id']) {
         break;
       }
-      $items[] = "[$field]";
+      $items[] = "{{ $field }}";
     }
     $form['replacements']['variables'] = [
       '#theme' => 'item_list',
@@ -191,17 +191,17 @@ class ViewsConditionalField extends FieldPluginBase {
     // Search through field information for possible replacement variables.
     foreach ( $labels as $key => $var) {
       // If we find a replacement variable, replace it.
-      if (strpos($equalto, "[$key]") !== FALSE) {
+      if (strpos($equalto, "{{ $key }}") !== FALSE) {
         $field = $this->clean_var($fields[$key]);
-        $equalto = $this->t(str_replace("[$key]", $field, $equalto));
+        $equalto = $this->t(str_replace("{{ $key }}", $field, $equalto));
       }
-      if (strpos($then, "[$key]") !== FALSE) {
+      if (strpos($then, "{{ $key }}") !== FALSE) {
         $field = $this->clean_var($fields[$key]);
-        $then = $this->t(str_replace("[$key]", $field, $then));
+        $then = $this->t(str_replace("{{ $key }}", $field, $then));
       }
-      if (strpos($or, "[$key]") !== FALSE) {
+      if (strpos($or, "{{ $key }}") !== FALSE) {
         $field = $this->clean_var($fields[$key]);
-        $or = $this->t(str_replace("[$key]", $field, $or));
+        $or = $this->t(str_replace("{{ $key }}", $field, $or));
       }
     }
 
