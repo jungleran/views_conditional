@@ -10,6 +10,10 @@ namespace Drupal\views_conditional\Plugin\views\field;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
 use Drupal\views\ResultRow;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Datetime\DateFormatter;
+use Drupal\Component\Datetime\TimeInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Field handler to flag the node type.
@@ -18,7 +22,35 @@ use Drupal\views\ResultRow;
  *
  * @ViewsField("views_conditional_field")
  */
-class ViewsConditionalField extends FieldPluginBase {
+class ViewsConditionalField extends FieldPluginBase implements ContainerFactoryPluginInterface {
+
+  /**
+   * @var DateFormatter $dateFormatter
+   */
+  protected $dateFormatter;
+
+  /**
+   * @var TimeInterface $dateTime
+   */
+  protected $dateTime;
+
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, DateFormatter $dateFormatter, TimeInterface $dateTime)
+  {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->dateFormatter = $dateFormatter;
+    $this->dateTime = $dateTime;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition)
+  {
+    return new static($configuration, $plugin_id, $plugin_definition, $container->get('date.formatter'), $container->get('datetime.time'));
+  }
 
   /**
    * @{inheritdoc}
@@ -126,8 +158,8 @@ class ViewsConditionalField extends FieldPluginBase {
       '#suffix' => '</p>',
     ];
     $items = [
-      'DATE_UNIX => Current date / time, in UNIX timestamp format (' . REQUEST_TIME . ')',
-      'DATE_STAMP => Current date / time, in standard format (' . format_date(REQUEST_TIME) . ')',
+      'DATE_UNIX => Current date / time, in UNIX timestamp format (' . $this->dateTime->getRequestTime() . ')',
+      'DATE_STAMP => Current date / time, in standard format (' . $this->dateFormatter->format($this->dateTime->getRequestTime()) . ')',
     ];
     $views_fields = $this->view->display_handler->getHandlers('field');
     foreach ($views_fields as $field => $handler) {
@@ -207,24 +239,24 @@ class ViewsConditionalField extends FieldPluginBase {
 
     // If we find a date stamp replacement, replace that.
     if (strpos($equalto, 'DATE_STAMP') !== FALSE) {
-      $equalto = str_replace('DATE_STAMP', format_date(REQUEST_TIME), $equalto);
+      $equalto = str_replace('DATE_STAMP', $this->dateFormatter->format($this->dateTime->getRequestTime()), $equalto);
     }
     if (strpos($then, 'DATE_STAMP') !== FALSE) {
-      $then = str_replace('DATE_STAMP', format_date(REQUEST_TIME), $then);
+      $then = str_replace('DATE_STAMP', $this->dateFormatter->format($this->dateTime->getRequestTime()), $then);
     }
     if (strpos($or, 'DATE_STAMP') !== FALSE) {
-      $or = str_replace('DATE_STAMP', format_date(REQUEST_TIME), $or);
+      $or = str_replace('DATE_STAMP', $this->dateFormatter->format($this->dateTime->getRequestTime()), $or);
     }
 
     // If we find a unix date stamp replacement, replace that.
     if (strpos($equalto, 'DATE_UNIX') !== FALSE) {
-      $equalto = str_replace('DATE_UNIX', REQUEST_TIME, $equalto);
+      $equalto = str_replace('DATE_UNIX', $this->dateTime->getRequestTime(), $equalto);
     }
     if (strpos($then, 'DATE_UNIX') !== FALSE) {
-      $then = str_replace('DATE_UNIX', REQUEST_TIME, $then);
+      $then = str_replace('DATE_UNIX', $this->dateTime->getRequestTime(), $then);
     }
     if (strpos($or, 'DATE_UNIX') !== FALSE) {
-      $or = str_replace('DATE_UNIX', REQUEST_TIME, $or);
+      $or = str_replace('DATE_UNIX', $this->dateTime->getRequestTime(), $or);
     }
 
     // Strip tags on the "if" field.  Otherwise it appears to
